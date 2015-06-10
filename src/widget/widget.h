@@ -47,6 +47,7 @@ class FilesForm;
 class ProfileForm;
 class SettingsWidget;
 class AddFriendForm;
+class QActionGroup;
 
 class Widget final : public QMainWindow
 {
@@ -148,6 +149,7 @@ private slots:
     void onSplitterMoved(int pos, int index);
     void processOfflineMsgs();
     void searchContacts();
+    void updateFilterText();
     void hideFriends(QString searchString, Status status, bool hideAll = false);
     void hideGroups(QString searchString, bool hideAll = false);
 
@@ -183,10 +185,23 @@ private:
 private:
     SystemTrayIcon *icon;
     QMenu *trayMenu;
-    QAction *statusOnline,
-            *statusAway,
-            *statusBusy,
-            *actionQuit;
+    QAction *statusOnline;
+    QAction *statusAway;
+    QAction *statusBusy;
+    QAction *actionQuit;
+
+    QMenu* filterMenu;
+
+    QActionGroup* filterGroup;
+    QAction* filterAllAction;
+    QAction* filterOnlineAction;
+    QAction* filterOfflineAction;
+    QAction* filterFriendsAction;
+    QAction* filterGroupsAction;
+
+    QActionGroup* filterDisplayGroup;
+    QAction* filterDisplayName;
+    QAction* filterDisplayActivity;
 
     Ui::MainWindow *ui;
     QSplitter *centralLayout;
