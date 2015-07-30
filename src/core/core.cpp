@@ -59,8 +59,10 @@ QThread* Core::coreThread{nullptr};
 
 #define MAX_GROUP_MESSAGE_LEN 1024
 
-Core::Core(QThread *CoreThread, Profile& profile) :
-    tox(nullptr), toxav(nullptr), profile(profile), ready{false}
+Core::Core(QThread *CoreThread, Profile& profile)
+    : tox(nullptr)
+    //OLD:toxav(nullptr)
+    , profile(profile), ready{false}
 {
     coreThread = CoreThread;
 
@@ -90,11 +92,12 @@ Core::Core(QThread *CoreThread, Profile& profile) :
 
 void Core::deadifyTox()
 {
-    if (toxav)
+    //OLD:
+    /*if (toxav)
     {
         toxav_kill(toxav);
         toxav = nullptr;
-    }
+    }*/
     if (tox)
     {
         tox_kill(tox);
@@ -240,13 +243,14 @@ void Core::makeTox(QByteArray savedata)
             return;
     }
 
-    toxav = toxav_new(tox, TOXAV_MAX_CALLS);
+    //OLD:
+    /*toxav = toxav_new(tox, TOXAV_MAX_CALLS);
     if (toxav == nullptr)
     {
         qCritical() << "Toxav core failed to start";
         emit failedToStart();
         return;
-    }
+    }*/
 }
 
 void Core::start()
@@ -317,19 +321,19 @@ void Core::start()
     tox_callback_file_recv_chunk(tox, CoreFile::onFileRecvChunkCallback, this);
     tox_callback_file_recv_control(tox, CoreFile::onFileControlCallback, this);
 
-    toxav_register_callstate_callback(toxav, onAvInvite, av_OnInvite, this);
-    toxav_register_callstate_callback(toxav, onAvStart, av_OnStart, this);
-    toxav_register_callstate_callback(toxav, onAvCancel, av_OnCancel, this);
-    toxav_register_callstate_callback(toxav, onAvReject, av_OnReject, this);
-    toxav_register_callstate_callback(toxav, onAvEnd, av_OnEnd, this);
-    toxav_register_callstate_callback(toxav, onAvRinging, av_OnRinging, this);
-    toxav_register_callstate_callback(toxav, onAvMediaChange, av_OnPeerCSChange, this);
-    toxav_register_callstate_callback(toxav, onAvMediaChange, av_OnSelfCSChange, this);
-    toxav_register_callstate_callback(toxav, onAvRequestTimeout, av_OnRequestTimeout, this);
-    toxav_register_callstate_callback(toxav, onAvPeerTimeout, av_OnPeerTimeout, this);
+    //OLD:toxav_register_callstate_callback(toxav, onAvInvite, av_OnInvite, this);
+    //OLD:toxav_register_callstate_callback(toxav, onAvStart, av_OnStart, this);
+    //OLD:toxav_register_callstate_callback(toxav, onAvCancel, av_OnCancel, this);
+    //OLD:toxav_register_callstate_callback(toxav, onAvReject, av_OnReject, this);
+    //OLD:toxav_register_callstate_callback(toxav, onAvEnd, av_OnEnd, this);
+    //OLD:toxav_register_callstate_callback(toxav, onAvRinging, av_OnRinging, this);
+    //OLD:toxav_register_callstate_callback(toxav, onAvMediaChange, av_OnPeerCSChange, this);
+    //OLD:toxav_register_callstate_callback(toxav, onAvMediaChange, av_OnSelfCSChange, this);
+    //OLD:toxav_register_callstate_callback(toxav, onAvRequestTimeout, av_OnRequestTimeout, this);
+    //OLD:toxav_register_callstate_callback(toxav, onAvPeerTimeout, av_OnPeerTimeout, this);
 
-    toxav_register_audio_callback(toxav, playCallAudio, this);
-    toxav_register_video_callback(toxav, playCallVideo, this);
+    //OLD:toxav_register_audio_callback(toxav, playCallAudio, this);
+    //OLD:toxav_register_video_callback(toxav, playCallVideo, this);
 
     QPixmap pic = Settings::getInstance().getSavedAvatar(getSelfId().toString());
     if (!pic.isNull() && !pic.size().isEmpty())
@@ -379,7 +383,7 @@ void Core::process()
 
     static int tolerance = CORE_DISCONNECT_TOLERANCE;
     tox_iterate(tox);
-    toxav_do(toxav);
+    //OLD:toxav_do(toxav);
 
 #ifdef DEBUG
     //we want to see the debug messages immediately
@@ -396,7 +400,7 @@ void Core::process()
         tolerance = 3*CORE_DISCONNECT_TOLERANCE;
     }
 
-    unsigned sleeptime = qMin(tox_iteration_interval(tox), toxav_do_interval(toxav));
+    unsigned sleeptime = tox_iteration_interval(tox);//OLD:qMin(, toxav_do_interval(toxav));
     sleeptime = qMin(sleeptime, CoreFile::corefileIterationInterval());
     toxTimer->start(sleeptime);
 }
@@ -1042,8 +1046,9 @@ int Core::joinGroupchat(int32_t friendnumber, uint8_t type, const uint8_t* frien
     else if (type == TOX_GROUPCHAT_TYPE_AV)
     {
         qDebug() << QString("Trying to join AV groupchat invite sent by friend %1").arg(friendnumber);
-        return toxav_join_av_groupchat(tox, friendnumber, friend_group_public_key, length,
-                                       &Audio::playGroupAudioQueued, const_cast<Core*>(this));
+        //OLD:
+        /*return toxav_join_av_groupchat(tox, friendnumber, friend_group_public_key, length,
+                                       &Audio::playGroupAudioQueued, const_cast<Core*>(this));*/
     }
     else
     {
@@ -1070,7 +1075,7 @@ void Core::createGroup(uint8_t type)
     }
     else if (type == TOX_GROUPCHAT_TYPE_AV)
     {
-        emit emptyGroupCreated(toxav_add_av_groupchat(tox, &Audio::playGroupAudioQueued, this));
+        //OLD:emit emptyGroupCreated(toxav_add_av_groupchat(tox, &Audio::playGroupAudioQueued, this));
     }
     else
     {
@@ -1225,7 +1230,8 @@ QString Core::getPeerName(const ToxId& id) const
 
 bool Core::isReady()
 {
-    return toxav && tox && ready;
+    //OLD:
+    return /*toxav && */tox && ready;
 }
 
 void Core::setNospam(uint32_t nospam)

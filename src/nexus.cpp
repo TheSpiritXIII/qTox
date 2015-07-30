@@ -76,7 +76,7 @@ void Nexus::start()
 
     // Setup the environment
     qRegisterMetaType<Status>("Status");
-    qRegisterMetaType<vpx_image>("vpx_image");
+    //OLD:qRegisterMetaType<vpx_image>("vpx_image");
     qRegisterMetaType<uint8_t>("uint8_t");
     qRegisterMetaType<uint16_t>("uint16_t");
     qRegisterMetaType<uint32_t>("uint32_t");

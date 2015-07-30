@@ -230,7 +230,7 @@ signals:
     void avCallFailed(uint32_t friendId);
     void avRejected(uint32_t friendId, int callIndex);
 
-    void videoFrameReceived(vpx_image* frame);
+    //OLD:void videoFrameReceived(vpx_image* frame);
 
 private:
     static void onFriendRequest(Tox* tox, const uint8_t* cUserId, const uint8_t* cMessage,
@@ -265,17 +265,17 @@ private:
     static void onAvPeerTimeout(void* toxav, int32_t call_index, void* core);
     static void onAvMediaChange(void *toxav, int32_t call_index, void* core);
 
-    static void sendGroupCallAudio(int groupId, ToxAv* toxav);
+    //OLD:static void sendGroupCallAudio(int groupId, ToxAv* toxav);
 
-    static void prepareCall(uint32_t friendId, int callId, ToxAv *toxav, bool videoEnabled);
+    //OLD:static void prepareCall(uint32_t friendId, int callId, ToxAv *toxav, bool videoEnabled);
     static void cleanupCall(int callId);
     static void playCallAudio(void *toxav, int32_t callId, const int16_t *data,
                               uint16_t samples, void *user_data); // Callback
-    static void sendCallAudio(int callId, ToxAv* toxav);
+    //OLD:static void sendCallAudio(int callId, ToxAv* toxav);
     static void playAudioBuffer(ALuint alSource, const int16_t *data, int samples,
                                 unsigned channels, int sampleRate);
-    static void playCallVideo(void *toxav, int32_t callId, const vpx_image_t* img, void *user_data);
-    static void sendCallVideo(int callId, ToxAv* toxav, std::shared_ptr<VideoFrame> frame);
+    //OLD:static void playCallVideo(void *toxav, int32_t callId, const vpx_image_t* img, void *user_data);
+    //OLD:static void sendCallVideo(int callId, ToxAv* toxav, std::shared_ptr<VideoFrame> frame);
 
     bool checkConnection();
 
@@ -292,7 +292,7 @@ private slots:
 
 private:
     Tox* tox;
-    ToxAv* toxav;
+    //OLD:ToxAv* toxav;
     QTimer *toxTimer;
     Profile& profile;
     static ToxCall calls[TOXAV_MAX_CALLS];
