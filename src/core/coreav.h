@@ -36,17 +36,14 @@ class QTimer;
 class CoreVideoSource;
 class CameraSource;
 
-//OLD:
-//class ToxAv;
-
 struct ToxCall
 {
     //OLD:ToxAvCSettings codecSettings;
     QTimer *sendAudioTimer;
-    int32_t callId;
+    //OLD:int32_t callId;
     uint32_t friendId;
     bool videoEnabled;
-    bool active;
+    bool active = false;
     bool muteMic;
     bool muteVol;
     ALuint alSource;

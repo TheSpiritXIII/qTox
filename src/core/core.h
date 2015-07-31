@@ -131,11 +131,11 @@ public slots:
     void pauseResumeFileSend(uint32_t friendId, uint32_t fileNum);
     void pauseResumeFileRecv(uint32_t friendId, uint32_t fileNum);
 
-    void answerCall(int callId);
+    void answerCall(uint32_t callId);
     void rejectCall(int callId);
     void hangupCall(int callId);
     void startCall(uint32_t friendId, bool video=false);
-    void cancelCall(int callId, uint32_t friendId);
+    void cancelCall(uint32_t friendId);
 
     void micMuteToggle(int callId);
     void volMuteToggle(int callId);
@@ -219,7 +219,7 @@ signals:
 
     void avInvite(uint32_t friendId, int callIndex, bool video);
     void avStart(uint32_t friendId, int callIndex, bool video);
-    void avCancel(uint32_t friendId, int callIndex);
+    void avCancel(uint32_t friendId);
     void avEnd(uint32_t friendId, int callIndex);
     void avRinging(uint32_t friendId, int callIndex, bool video);
     void avStarting(uint32_t friendId, int callIndex, bool video);
@@ -228,7 +228,7 @@ signals:
     void avPeerTimeout(uint32_t friendId, int callIndex);
     void avMediaChange(uint32_t friendId, int callIndex, bool videoEnabled);
     void avCallFailed(uint32_t friendId);
-    void avRejected(uint32_t friendId, int callIndex);
+    void avRejected(uint32_t friendId);
 
     //OLD:void videoFrameReceived(vpx_image* frame);
 
@@ -255,9 +255,11 @@ private:
                                    const uint8_t* title, uint8_t len, void* _core);
     static void onReadReceiptCallback(Tox *tox, uint32_t friendId, uint32_t receipt, void *core);
 
-    static void onAvInvite(void* toxav, int32_t call_index, void* core);
-    static void onAvStart(void* toxav, int32_t call_index, void* core);
-    static void onAvCancel(void* toxav, int32_t call_index, void* core);
+    static void onAvInvite(ToxAV *toxav, uint32_t friendId, bool audio_enable, bool video_enabled, void* core);
+    static void onAvState(ToxAV* toxav, uint32_t friendId, uint32_t state, void* core);
+
+    static void onAvStart(ToxAV *toxav, uint32_t friendId, void* core);
+    static void onAvCancel(ToxAV *toxav, uint32_t friendId, void* core);
     static void onAvReject(void* toxav, int32_t call_index, void* core);
     static void onAvEnd(void* toxav, int32_t call_index, void* core);
     static void onAvRinging(void* toxav, int32_t call_index, void* core);
@@ -267,15 +269,18 @@ private:
 
     //OLD:static void sendGroupCallAudio(int groupId, ToxAv* toxav);
 
-    //OLD:static void prepareCall(uint32_t friendId, int callId, ToxAv *toxav, bool videoEnabled);
+    static void prepareCall(uint32_t friendId, ToxAV *toxav, bool videoEnabled);
     static void cleanupCall(int callId);
-    static void playCallAudio(void *toxav, int32_t callId, const int16_t *data,
-                              uint16_t samples, void *user_data); // Callback
-    //OLD:static void sendCallAudio(int callId, ToxAv* toxav);
+    static void playCallAudio(ToxAV* toxav, uint32_t friendId, const int16_t *data, size_t samples,
+                              uint8_t channels, uint32_t sampling_rate, void *user_data);
+
+    static void sendCallAudio(uint32_t friendId, ToxAV* toxav);
     static void playAudioBuffer(ALuint alSource, const int16_t *data, int samples,
                                 unsigned channels, int sampleRate);
     //OLD:static void playCallVideo(void *toxav, int32_t callId, const vpx_image_t* img, void *user_data);
     //OLD:static void sendCallVideo(int callId, ToxAv* toxav, std::shared_ptr<VideoFrame> frame);
+
+    void handleCallError(TOXAV_ERR_CALL_CONTROL control_err);
 
     bool checkConnection();
 
@@ -292,12 +297,16 @@ private slots:
 
 private:
     Tox* tox;
-    //OLD:ToxAv* toxav;
+    //OLD: ToxAv* toxav;
+    ToxAV* newtox_av;
     QTimer *toxTimer;
     Profile& profile;
-    static ToxCall calls[TOXAV_MAX_CALLS];
+    //OLD:
+    //static ToxCall calls[TOXAV_MAX_CALLS];
+    static QHash<uint32_t, ToxCall> halls;
 #ifdef QTOX_FILTER_AUDIO
-    static AudioFilterer * filterer[TOXAV_MAX_CALLS];
+    static QHash<uint32_t, AudioFilterer*> hilterer;
+    //OLD:static AudioFilterer * filterer[TOXAV_MAX_CALLS];
 #endif
     static QHash<int, ToxGroupCall> groupCalls; // Maps group IDs to ToxGroupCalls
     QMutex messageSendMutex;

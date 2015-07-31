@@ -52,6 +52,9 @@
 #include <QBuffer>
 #include <QMutexLocker>
 
+//OLD:Temporary
+#include <tox/toxav.h>
+
 const QString Core::CONFIG_FILE_NAME = "data";
 const QString Core::TOX_EXT = ".tox";
 QHash<int, ToxGroupCall> Core::groupCalls;
@@ -61,8 +64,9 @@ QThread* Core::coreThread{nullptr};
 
 Core::Core(QThread *CoreThread, Profile& profile)
     : tox(nullptr)
-    //OLD:toxav(nullptr)
-    , profile(profile), ready{false}
+    , newtox_av(nullptr)
+    , profile(profile)
+    , ready{false}
 {
     coreThread = CoreThread;
 
@@ -75,13 +79,14 @@ Core::Core(QThread *CoreThread, Profile& profile)
     connect(toxTimer, &QTimer::timeout, this, &Core::process);
     connect(&Settings::getInstance(), &Settings::dhtServerListChanged, this, &Core::process);
 
-    for (int i=0; i<TOXAV_MAX_CALLS;i++)
+    //OLD:
+    /*for (int i=0; i<TOXAV_MAX_CALLS;i++)
     {
         calls[i].active = false;
         calls[i].alSource = 0;
         calls[i].sendAudioTimer = new QTimer();
         calls[i].sendAudioTimer->moveToThread(coreThread);
-    }
+    }*/
 
     // OpenAL init
     QString outDevDescr = Settings::getInstance().getOutDev();
@@ -92,12 +97,11 @@ Core::Core(QThread *CoreThread, Profile& profile)
 
 void Core::deadifyTox()
 {
-    //OLD:
-    /*if (toxav)
+    if (newtox_av)
     {
-        toxav_kill(toxav);
-        toxav = nullptr;
-    }*/
+        toxav_kill(newtox_av);
+        newtox_av = nullptr;
+    }
     if (tox)
     {
         tox_kill(tox);
@@ -124,12 +128,13 @@ Core::~Core()
         coreThread->wait(500);
     }
 
-    for (ToxCall call : calls)
+    //OLD:
+    /*for (ToxCall call : calls)
     {
         if (!call.active)
             continue;
         hangupCall(call.callId);
-    }
+    }*/
 
     deadifyTox();
 
@@ -243,14 +248,26 @@ void Core::makeTox(QByteArray savedata)
             return;
     }
 
-    //OLD:
-    /*toxav = toxav_new(tox, TOXAV_MAX_CALLS);
-    if (toxav == nullptr)
+    TOXAV_ERR_NEW toxav_err;
+    newtox_av = toxav_new(tox, &toxav_err);
+
+    switch (toxav_err)
     {
-        qCritical() << "Toxav core failed to start";
-        emit failedToStart();
-        return;
-    }*/
+        case TOXAV_ERR_NEW_OK:
+            break;
+        case TOXAV_ERR_NEW_NULL:
+            qCritical() << "unexpected null";
+            emit failedToStart();
+            return;
+        case TOXAV_ERR_NEW_MALLOC:
+            qCritical() << "memory allocation failure";
+            emit failedToStart();
+            return;
+        case TOXAV_ERR_NEW_MULTIPLE:
+            qCritical() << "Toxav core failed to start";
+            emit failedToStart();
+            return;
+    }
 }
 
 void Core::start()
@@ -321,6 +338,13 @@ void Core::start()
     tox_callback_file_recv_chunk(tox, CoreFile::onFileRecvChunkCallback, this);
     tox_callback_file_recv_control(tox, CoreFile::onFileControlCallback, this);
 
+    toxav_callback_call(newtox_av, onAvInvite, this);
+    toxav_callback_call_state(newtox_av, onAvState, this);
+    toxav_callback_audio_receive_frame(newtox_av, playCallAudio, this);
+    //toxav_callback_audio_bit_rate_status(newtox_av);
+    //toxav_callback_video_receive_frame(newtox_av, playCallVideo, this);
+    //toxav_callback_video_bit_rate_status(newtox_av);
+
     //OLD:toxav_register_callstate_callback(toxav, onAvInvite, av_OnInvite, this);
     //OLD:toxav_register_callstate_callback(toxav, onAvStart, av_OnStart, this);
     //OLD:toxav_register_callstate_callback(toxav, onAvCancel, av_OnCancel, this);
@@ -332,7 +356,6 @@ void Core::start()
     //OLD:toxav_register_callstate_callback(toxav, onAvRequestTimeout, av_OnRequestTimeout, this);
     //OLD:toxav_register_callstate_callback(toxav, onAvPeerTimeout, av_OnPeerTimeout, this);
 
-    //OLD:toxav_register_audio_callback(toxav, playCallAudio, this);
     //OLD:toxav_register_video_callback(toxav, playCallVideo, this);
 
     QPixmap pic = Settings::getInstance().getSavedAvatar(getSelfId().toString());
@@ -383,7 +406,7 @@ void Core::process()
 
     static int tolerance = CORE_DISCONNECT_TOLERANCE;
     tox_iterate(tox);
-    //OLD:toxav_do(toxav);
+    toxav_iterate(newtox_av);
 
 #ifdef DEBUG
     //we want to see the debug messages immediately
@@ -400,7 +423,7 @@ void Core::process()
         tolerance = 3*CORE_DISCONNECT_TOLERANCE;
     }
 
-    unsigned sleeptime = tox_iteration_interval(tox);//OLD:qMin(, toxav_do_interval(toxav));
+    unsigned sleeptime = qMin(tox_iteration_interval(tox), toxav_iteration_interval(newtox_av));
     sleeptime = qMin(sleeptime, CoreFile::corefileIterationInterval());
     toxTimer->start(sleeptime);
 }
@@ -1230,8 +1253,7 @@ QString Core::getPeerName(const ToxId& id) const
 
 bool Core::isReady()
 {
-    //OLD:
-    return /*toxav && */tox && ready;
+    return newtox_av && tox && ready;
 }
 
 void Core::setNospam(uint32_t nospam)
@@ -1250,7 +1272,7 @@ void Core::resetCallSources()
         call.alSources.clear();
     }
 
-    for (ToxCall& call : calls)
+    for (ToxCall& call : halls)
     {
         if (call.active && call.alSource)
         {

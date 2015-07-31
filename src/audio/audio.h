@@ -64,12 +64,19 @@ public:
     static bool isOutputClosed(); ///< Returns true if the output device is open
 
     static void playMono16Sound(const QByteArray& data); ///< Play a 44100Hz mono 16bit PCM sound
-    static bool tryCaptureSamples(uint8_t* buf, int framesize); ///< Does nothing and return false on failure
+    static bool tryCaptureSamples(uint8_t* buf, int framesize, int bufsize); ///< Does nothing and return false on failure
 
     /// May be called from any thread, will always queue a call to playGroupAudio
     /// The first and last argument are ignored, but allow direct compatibility with toxcore
     static void playGroupAudioQueued(Tox*, int group, int peer, const int16_t* data,
                         unsigned samples, uint8_t channels, unsigned sample_rate, void*);
+
+    static const uint16_t frame_duration = 20;
+    static const uint16_t sample_rate = 48000;
+    static const uint8_t channels = 1;
+    static const size_t sample_count = (sample_rate * frame_duration / 1000);
+    static const int framesize = sample_count * channels;
+    static const int bufsize = framesize * 2;
 
 #ifdef QTOX_FILTER_AUDIO
     static void getEchoesToFilter(AudioFilterer* filter, int framesize);
