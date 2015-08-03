@@ -74,13 +74,11 @@ void Core::prepareCall(uint32_t friendId, ToxAV* toxav, bool videoEnabled)
     halls[friendId].sendAudioTimer->start();
     if (halls[friendId].videoEnabled)
     {
-        // OLD:
-        /*
-        calls[callId].videoSource = new CoreVideoSource;
+        halls[friendId].videoSource = new CoreVideoSource;
         CameraSource& source = CameraSource::getInstance();
         source.subscribe();
         connect(&source, &VideoSource::frameAvailable,
-                [=](std::shared_ptr<VideoFrame> frame){sendCallVideo(callId,toxav,frame);});*/
+                [=](std::shared_ptr<VideoFrame> frame){sendCallVideo(friendId,toxav,frame);});
     }
 
 #ifdef QTOX_FILTER_AUDIO
@@ -109,7 +107,7 @@ void Core::prepareCall(uint32_t friendId, ToxAV* toxav, bool videoEnabled)
 
 }
 
-void Core::onAvMediaChange(void* toxav, int32_t callId, void* core)
+void Core::onAvMediaChange(void* toxav, uint32_t friendId, void* core)
 {
     //OLD:
     /*
@@ -155,10 +153,10 @@ void Core::answerCall(uint32_t friendId)
 
     TOXAV_ERR_ANSWER answer_err;
 
-    if (toxav_answer(newtox_av, friendId, 48, 0, &answer_err))
+    if (toxav_answer(newtox_av, friendId, 48, 48, &answer_err))
     {
-        //assert(halls.find(friendId) != halls.end());
-        halls[friendId].active = true;
+        prepareCall(friendId, newtox_av, true);
+        onAvStart(newtox_av, friendId, this, true);
     }
     else
     {
@@ -247,9 +245,10 @@ void Core::startCall(uint32_t friendId, bool video)
 
     TOXAV_ERR_CALL call_error;
 
-    if (toxav_call(newtox_av, friendId, 48, 0, &call_error))
+    if (toxav_call(newtox_av, friendId, 48, 48, &call_error))
     {
-        emit avRinging(friendId, 0, video);
+        qDebug() << QString("AV ringing with %1 with video").arg(friendId);
+        emit avRinging(friendId, video);
     }
     else
     {
@@ -413,38 +412,18 @@ void Core::sendCallAudio(uint32_t friendId, ToxAV* toxav)
         if (!toxav_audio_send_frame(toxav, friendId, (int16_t*)buf, Audio::sample_count, Audio::channels, Audio::sample_rate, &frame_err))
         {
             qDebug() << "toxav_audio_send_frame error";
-
-            switch (frame_err)
-            {
-                case TOXAV_ERR_SEND_FRAME_OK:
-                    break;
-                case TOXAV_ERR_SEND_FRAME_NULL:
-                    qWarning() << "Frame null";
-                    break;
-                case TOXAV_ERR_SEND_FRAME_FRIEND_NOT_FOUND:
-                    qWarning() << "Friend not found";
-                    break;
-                case TOXAV_ERR_SEND_FRAME_FRIEND_NOT_IN_CALL:
-                    qWarning() << "Friend not in call";
-                    break;
-                case TOXAV_ERR_SEND_FRAME_INVALID:
-                    qWarning() << "Frame invalid";
-                    break;
-                case TOXAV_ERR_SEND_FRAME_PAYLOAD_TYPE_DISABLED:
-                    qWarning() << "Payload type disabled";
-                    break;
-                case TOXAV_ERR_SEND_FRAME_RTP_FAILED:
-                    qWarning() << "Frame RTP failed";
-                    break;
-            }
+            handleSendError(frame_err);
         }
     }
     halls[friendId].sendAudioTimer->start();
 }
 
-//OLD:
-/*void Core::playCallVideo(void*, int32_t callId, const vpx_image_t* img, void *user_data)
-{switch (control_err)
+void Core::playCallVideo(ToxAV *toxav, uint32_t friendId, uint16_t width, uint16_t height, const uint8_t* y, const uint8_t* u, const uint8_t* v, int32_t ystride, int32_t ustride, int32_t vstride, void* user_data)
+{
+    qDebug() << "Recieved video frame";
+    //OLD:
+    /*
+    switch (control_err)
     {
         case TOXAV_ERR_CALL_CONTROL_OK:
             break;
@@ -458,29 +437,45 @@ void Core::sendCallAudio(uint32_t friendId, ToxAV* toxav)
             qWarning() << "Invalid transition";
             break;
     }
+
+    */
     Q_UNUSED(user_data);
 
-    if (!calls[callId].active || !calls[callId].videoEnabled)
+    if (!halls[friendId].active || !halls[friendId].videoEnabled)
         return;
 
-    calls[callId].videoSource->pushFrame(img);
-}*/
+    halls[friendId].videoSource->pushFrame(width, height, y, u, v, ystride, ustride, vstride);
+}
 
-void Core::sendCallVideo(int32_t callId, ToxAV* toxav, std::shared_ptr<VideoFrame> vframe)
+void Core::sendCallVideo(uint32_t friendId, ToxAV* toxav, std::shared_ptr<VideoFrame> vframe)
 {
-    //OLD:
-    /*
-    if (!calls[callId].active || !calls[callId].videoEnabled)
+    qDebug() << "Sending call video";
+    assert(halls.find(friendId) != halls.end());
+
+    if (!halls[friendId].active || !halls[friendId].videoEnabled)
         return;
 
     // This frame shares vframe's buffers, we don't call vpx_img_free but just delete it
     vpx_image* frame = vframe->toVpxImage();
+
     if (frame->fmt == VPX_IMG_FMT_NONE)
     {
         qWarning() << "Invalid frame";
         delete frame;
         return;
     }
+
+    TOXAV_ERR_SEND_FRAME frame_err;
+
+    if (!toxav_video_send_frame(toxav, friendId, 20, 20, frame->planes[VPX_PLANE_Y], frame->planes[VPX_PLANE_U], frame->planes[VPX_PLANE_V], &frame_err))
+    {
+        qDebug() << "toxav_video_send_frame error";
+        handleSendError(frame_err);
+    }
+
+    delete frame;
+    //OLD:
+    /*
 
     int result;
     if ((result = toxav_prepare_video_frame(toxav, callId, videobuf, videobufsize, frame)) < 0)
@@ -492,8 +487,7 @@ void Core::sendCallVideo(int32_t callId, ToxAV* toxav, std::shared_ptr<VideoFram
 
     if ((result = toxav_send_video(toxav, callId, (uint8_t*)videobuf, result)) < 0)
         qDebug() << QString("toxav_send_video error: %1").arg(result);
-
-    delete frame;*/
+*/
 }
 
 void Core::micMuteToggle(uint32_t friendId)
@@ -567,10 +561,16 @@ void Core::onAvReject(void* _toxav, int32_t callId, void* core)
     emit static_cast<Core*>(core)->avRejected(friendId, callId);*/
 }
 
-void Core::onAvEnd(void* _toxav, int32_t call_index, void* core)
+void Core::onAvEnd(ToxAV* _toxav, uint32_t friendId, void* core)
 {
     //OLD:
-    /*ToxAv* toxav = static_cast<ToxAv*>(_toxav);
+    qDebug() << QString("AV end from %1").arg(friendId);
+
+    emit static_cast<Core*>(core)->avEnd(friendId);
+
+    if (halls[friendId].active)
+        cleanupCall(friendId);
+    /*
 
     int friendId = toxav_get_peer_id(toxav, call_index, 0);
     if (friendId < 0)
@@ -578,12 +578,7 @@ void Core::onAvEnd(void* _toxav, int32_t call_index, void* core)
         qWarning() << "Received invalid AV end";
         return;
     }
-    qDebug() << QString("AV end from %1").arg(friendId);
-
-    emit static_cast<Core*>(core)->avEnd(friendId, call_index);
-
-    if (calls[call_index].active)
-        cleanupCall(call_index);*/
+*/
 }
 
 void Core::onAvRinging(void* _toxav, int32_t call_index, void* core)
@@ -653,7 +648,7 @@ void Core::onAvInvite(ToxAV* _toxav, uint32_t friendId, bool audio_enable, bool 
 {
     qDebug() << "Invited by " << friendId << audio_enable << video_enabled;
 
-    emit static_cast<Core*>(core)->avInvite(friendId, 0, video_enabled);
+    emit static_cast<Core*>(core)->avInvite(friendId, video_enabled);
     //OLD:
     /*ToxAv* toxav = static_cast<ToxAv*>(_toxav);
 
@@ -697,12 +692,12 @@ void Core::onAvState(ToxAV *toxav, uint32_t friendId, uint32_t state, void *core
     }
     if (state & TOXAV_FRIEND_CALL_STATE_FINISHED)
     {
-        onAvCancel(toxav, friendId, core);
+        onAvEnd(toxav, friendId, core);
     }
     if (state & TOXAV_FRIEND_CALL_STATE_SENDING_A)
     {
         qDebug() << "Sending audio";
-        onAvStart(toxav, friendId, core);
+        onAvStart(toxav, friendId, core, state & TOXAV_FRIEND_CALL_STATE_SENDING_V);
     }
     if (state & TOXAV_FRIEND_CALL_STATE_SENDING_V)
     {
@@ -716,22 +711,23 @@ void Core::onAvState(ToxAV *toxav, uint32_t friendId, uint32_t state, void *core
     {
         qDebug() << "Unimplemented accepting video";
     }
+
+    if (state == 0)
+        onAvEnd(toxav, friendId, core);
 }
 
-void Core::onAvStart(ToxAV* toxav, uint32_t friendId, void* core)
+void Core::onAvStart(ToxAV* toxav, uint32_t friendId, void* core, bool video)
 {
-    if (false)
-    {
+    //assert(halls.find(friendId) != halls.end());
+    //bool video = halls[friendId].videoEnabled;
+
+    if (video)
         qDebug() << QString("AV start from %1 with video").arg(friendId);
-        prepareCall(friendId, toxav, true);
-        emit static_cast<Core*>(core)->avStart(friendId, friendId, true);
-    }
     else
-    {
         qDebug() << QString("AV start from %1 without video").arg(friendId);
-        prepareCall(friendId, toxav, false);
-        emit static_cast<Core*>(core)->avStart(friendId, friendId, false);
-    }
+
+    prepareCall(friendId, toxav, video);
+    emit static_cast<Core*>(core)->avStart(friendId, video);
 
     //OLD:
     /*ToxAv* toxav = static_cast<ToxAv*>(_toxav);
@@ -828,6 +824,33 @@ void Core::handleCallError(TOXAV_ERR_CALL_CONTROL control_err)
             break;
         case TOXAV_ERR_CALL_CONTROL_INVALID_TRANSITION:
             qWarning() << "Invalid transition";
+            break;
+    }
+}
+
+void Core::handleSendError(TOXAV_ERR_SEND_FRAME send_err)
+{
+    switch (send_err)
+    {
+        case TOXAV_ERR_SEND_FRAME_OK:
+            break;
+        case TOXAV_ERR_SEND_FRAME_NULL:
+            qWarning() << "Frame null";
+            break;
+        case TOXAV_ERR_SEND_FRAME_FRIEND_NOT_FOUND:
+            qWarning() << "Friend not found";
+            break;
+        case TOXAV_ERR_SEND_FRAME_FRIEND_NOT_IN_CALL:
+            qWarning() << "Friend not in call";
+            break;
+        case TOXAV_ERR_SEND_FRAME_INVALID:
+            qWarning() << "Frame invalid";
+            break;
+        case TOXAV_ERR_SEND_FRAME_PAYLOAD_TYPE_DISABLED:
+            qWarning() << "Payload type disabled";
+            break;
+        case TOXAV_ERR_SEND_FRAME_RTP_FAILED:
+            qWarning() << "Frame RTP failed";
             break;
     }
 }

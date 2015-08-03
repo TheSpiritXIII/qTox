@@ -332,7 +332,7 @@ void Core::start()
     toxav_callback_call_state(newtox_av, onAvState, this);
     toxav_callback_audio_receive_frame(newtox_av, playCallAudio, this);
     //toxav_callback_audio_bit_rate_status(newtox_av);
-    //toxav_callback_video_receive_frame(newtox_av, playCallVideo, this);
+    toxav_callback_video_receive_frame(newtox_av, playCallVideo, this);
     //toxav_callback_video_bit_rate_status(newtox_av);
 
     //OLD:toxav_register_callstate_callback(toxav, onAvInvite, av_OnInvite, this);

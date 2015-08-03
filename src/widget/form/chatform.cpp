@@ -300,7 +300,7 @@ void ChatForm::onAvInvite(uint32_t FriendId, bool video)
     }
 }
 
-void ChatForm::onAvStart(uint32_t FriendId/*, int CallId*/, bool video)
+void ChatForm::onAvStart(uint32_t FriendId, bool video)
 {
     if (FriendId != f->getFriendID())
         return;
@@ -368,7 +368,7 @@ void ChatForm::onAvCancel(uint32_t FriendId)
     addSystemInfoMessage(tr("%1 stopped calling").arg(f->getDisplayedName()), ChatMessage::INFO, QDateTime::currentDateTime());
 }
 
-void ChatForm::onAvEnd(uint32_t FriendId, int)
+void ChatForm::onAvEnd(uint32_t FriendId)
 {
     if (FriendId != f->getFriendID())
         return;
@@ -420,7 +420,7 @@ void ChatForm::onAvRinging(uint32_t FriendId/*, int CallId*/, bool video)
     Widget::getInstance()->updateFriendActivity(f);
 }
 
-void ChatForm::onAvStarting(uint32_t FriendId/*, int CallId*/, bool video)
+void ChatForm::onAvStarting(uint32_t FriendId, bool video)
 {
     if (FriendId != f->getFriendID())
         return;
@@ -455,7 +455,7 @@ void ChatForm::onAvStarting(uint32_t FriendId/*, int CallId*/, bool video)
     startCounter();
 }
 
-void ChatForm::onAvEnding(uint32_t FriendId, int)
+void ChatForm::onAvEnding(uint32_t FriendId)
 {
     if (FriendId != f->getFriendID())
         return;
@@ -471,7 +471,7 @@ void ChatForm::onAvEnding(uint32_t FriendId, int)
     hideNetcam();
 }
 
-void ChatForm::onAvRequestTimeout(uint32_t FriendId, int)
+void ChatForm::onAvRequestTimeout(uint32_t FriendId)
 {
     if (FriendId != f->getFriendID())
         return;
@@ -487,7 +487,7 @@ void ChatForm::onAvRequestTimeout(uint32_t FriendId, int)
     hideNetcam();
 }
 
-void ChatForm::onAvPeerTimeout(uint32_t FriendId, int)
+void ChatForm::onAvPeerTimeout(uint32_t FriendId)
 {
     if (FriendId != f->getFriendID())
         return;

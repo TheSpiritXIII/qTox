@@ -30,6 +30,57 @@ CoreVideoSource::CoreVideoSource()
 {
 }
 
+void CoreVideoSource::pushFrame(uint32_t width, uint32_t height, const uint8_t* y, const uint8_t* u, const uint8_t* v, int32_t ystride, int32_t ustride, int32_t vstride)
+{
+    // Fast lock
+    {
+        bool expected = false;
+        while (!biglock.compare_exchange_weak(expected, true))
+            expected = false;
+    }
+
+    std::shared_ptr<VideoFrame> vframe;
+    AVFrame* avframe;
+    uint8_t* buf;
+    int dstStride, srcStride, minStride;
+
+    if (subscribers <= 0)
+        goto end;
+
+    avframe = av_frame_alloc();
+    if (!avframe)
+        goto end;
+    avframe->width = width;
+    avframe->height = height;
+    avframe->format = AV_PIX_FMT_YUV420P;
+
+    buf = (uint8_t*)av_malloc(avpicture_get_size(AV_PIX_FMT_YUV420P, width, height));
+    if (!buf)
+    {
+        av_frame_free(&avframe);
+        goto end;
+    }
+    avframe->opaque = buf;
+
+    avpicture_fill((AVPicture*)avframe, buf, AV_PIX_FMT_YUV420P, width, height);
+
+    dstStride=avframe->linesize[0], srcStride=ystride, minStride=std::min(dstStride, srcStride);
+    for (int i=0; i<height; i++)
+        memcpy(avframe->data[0]+dstStride*i, y+srcStride*i, minStride);
+    dstStride=avframe->linesize[1], srcStride=ustride, minStride=std::min(dstStride, srcStride);
+    for (int i=0; i<height/2; i++)
+        memcpy(avframe->data[1]+dstStride*i, u+srcStride*i, minStride);
+    dstStride=avframe->linesize[2], srcStride=vstride, minStride=std::min(dstStride, srcStride);
+    for (int i=0; i<height/2; i++)
+        memcpy(avframe->data[2]+dstStride*i, v+srcStride*i, minStride);
+
+    vframe = std::make_shared<VideoFrame>(avframe);
+    emit frameAvailable(vframe);
+
+end:
+    biglock = false;
+}
+
 void CoreVideoSource::pushFrame(const vpx_image_t* vpxframe)
 {
     // Fast lock

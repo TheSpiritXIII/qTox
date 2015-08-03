@@ -217,16 +217,16 @@ signals:
 
     void fileSendFailed(uint32_t friendId, const QString& fname);
 
-    void avInvite(uint32_t friendId, int callIndex, bool video);
-    void avStart(uint32_t friendId, int callIndex, bool video);
+    void avInvite(uint32_t friendId, bool video);
+    void avStart(uint32_t friendId, bool video);
     void avCancel(uint32_t friendId);
-    void avEnd(uint32_t friendId, int callIndex);
-    void avRinging(uint32_t friendId, int callIndex, bool video);
-    void avStarting(uint32_t friendId, int callIndex, bool video);
-    void avEnding(uint32_t friendId, int callIndex);
-    void avRequestTimeout(uint32_t friendId, int callIndex);
-    void avPeerTimeout(uint32_t friendId, int callIndex);
-    void avMediaChange(uint32_t friendId, int callIndex, bool videoEnabled);
+    void avEnd(uint32_t friendId);
+    void avRinging(uint32_t friendId, bool video);
+    void avStarting(uint32_t friendId, bool video);
+    void avEnding(uint32_t friendId);
+    void avRequestTimeout(uint32_t friendId);
+    void avPeerTimeout(uint32_t friendId);
+    void avMediaChange(uint32_t friendId, bool videoEnabled);
     void avCallFailed(uint32_t friendId);
     void avRejected(uint32_t friendId);
 
@@ -258,14 +258,14 @@ private:
     static void onAvInvite(ToxAV *toxav, uint32_t friendId, bool audio_enable, bool video_enabled, void* core);
     static void onAvState(ToxAV* toxav, uint32_t friendId, uint32_t state, void* core);
 
-    static void onAvStart(ToxAV *toxav, uint32_t friendId, void* core);
+    static void onAvStart(ToxAV *toxav, uint32_t friendId, void* core, bool video);
     static void onAvCancel(ToxAV *toxav, uint32_t friendId, void* core);
     static void onAvReject(void* toxav, int32_t call_index, void* core);
-    static void onAvEnd(void* toxav, int32_t call_index, void* core);
+    static void onAvEnd(ToxAV *toxav, uint32_t friendId, void* core);
     static void onAvRinging(void* toxav, int32_t call_index, void* core);
     static void onAvRequestTimeout(void* toxav, int32_t call_index, void* core);
     static void onAvPeerTimeout(void* toxav, int32_t call_index, void* core);
-    static void onAvMediaChange(void *toxav, int32_t call_index, void* core);
+    static void onAvMediaChange(void *toxav, uint32_t friendId, void* core);
 
     static void sendGroupCallAudio(int groupId, ToxAV* toxav);
 
@@ -277,10 +277,11 @@ private:
     static void sendCallAudio(uint32_t friendId, ToxAV* toxav);
     static void playAudioBuffer(ALuint alSource, const int16_t *data, int samples,
                                 unsigned channels, int sampleRate);
-    //OLD:static void playCallVideo(void *toxav, int32_t callId, const vpx_image_t* img, void *user_data);
-    static void sendCallVideo(int callId, ToxAV* toxav, std::shared_ptr<VideoFrame> frame);
+    static void playCallVideo(ToxAV *toxav, uint32_t friendId, uint16_t width, uint16_t height, const uint8_t* y, const uint8_t* u, const uint8_t* v, int32_t ystride, int32_t ustride, int32_t vstride, void* user_data);
+    static void sendCallVideo(uint32_t friendId, ToxAV* toxav, std::shared_ptr<VideoFrame> frame);
 
-    void handleCallError(TOXAV_ERR_CALL_CONTROL control_err);
+    static void handleCallError(TOXAV_ERR_CALL_CONTROL control_err);
+    static void handleSendError(TOXAV_ERR_SEND_FRAME send_err);
 
     bool checkConnection();
 

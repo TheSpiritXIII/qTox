@@ -69,12 +69,12 @@ public slots:
     void onAvInvite(uint32_t FriendId, bool video);
     void onAvStart(uint32_t FriendId, bool video);
     void onAvCancel(uint32_t FriendId);
-    void onAvEnd(uint32_t FriendId, int CallId);
+    void onAvEnd(uint32_t FriendId);
     void onAvRinging(uint32_t FriendId, bool video);
     void onAvStarting(uint32_t FriendId, bool video);
-    void onAvEnding(uint32_t FriendId, int CallId);
-    void onAvRequestTimeout(uint32_t FriendId, int CallId);
-    void onAvPeerTimeout(uint32_t FriendId, int CallId);
+    void onAvEnding(uint32_t FriendId);
+    void onAvRequestTimeout(uint32_t FriendId);
+    void onAvPeerTimeout(uint32_t FriendId);
     void onAvMediaChange(uint32_t FriendId, bool video);
     void onAvCallFailed(uint32_t FriendId);
     void onAvRejected(uint32_t FriendId);

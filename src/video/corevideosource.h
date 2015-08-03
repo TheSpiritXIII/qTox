@@ -41,6 +41,7 @@ private:
 
     /// Makes a copy of the vpx_image_t and emits it as a new VideoFrame
     void pushFrame(const vpx_image_t *frame);
+    void pushFrame(uint32_t width, uint32_t height, const uint8_t* y, const uint8_t* u, const uint8_t* v, int32_t ystride, int32_t ustride, int32_t vstride);
     /// If true, self-delete after the last suscriber is gone
     void setDeleteOnClose(bool newstate);
 
