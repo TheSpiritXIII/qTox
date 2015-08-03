@@ -272,7 +272,7 @@ void Audio::playMono16Sound(const QByteArray& data)
     alDeleteBuffers(1, &buffer);
 }
 
-void Audio::playGroupAudioQueued(Tox*,int group, int peer, const int16_t* data,
+void Audio::playGroupAudioQueued(void*,int group, int peer, const int16_t* data,
                         unsigned samples, uint8_t channels, unsigned sample_rate, void* core)
 {
     QMetaObject::invokeMethod(instance, "playGroupAudio", Qt::BlockingQueuedConnection,

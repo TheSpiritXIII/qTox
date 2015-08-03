@@ -68,7 +68,7 @@ public:
 
     /// May be called from any thread, will always queue a call to playGroupAudio
     /// The first and last argument are ignored, but allow direct compatibility with toxcore
-    static void playGroupAudioQueued(Tox*, int group, int peer, const int16_t* data,
+    static void playGroupAudioQueued(void *, int group, int peer, const int16_t* data,
                         unsigned samples, uint8_t channels, unsigned sample_rate, void*);
 
     static const uint16_t frame_duration = 20;

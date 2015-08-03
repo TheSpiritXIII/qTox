@@ -117,7 +117,6 @@ private:
     Friend* f;
     CroppingLabel *statusMessageLabel;
     NetCamView* netcam;
-    //OLD:int callId;
     QLabel *callDuration;
     QTimer *callDurationTimer;
     QTimer typingTimer;

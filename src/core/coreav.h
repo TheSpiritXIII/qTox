@@ -38,11 +38,14 @@ class CameraSource;
 
 struct ToxCall
 {
-    //OLD:ToxAvCSettings codecSettings;
+    ToxCall()
+    {
+
+    }
+
     QTimer *sendAudioTimer;
-    //OLD:int32_t callId;
     uint32_t friendId;
-    bool videoEnabled;
+    bool videoEnabled = false;
     bool active = false;
     bool muteMic;
     bool muteVol;
@@ -52,7 +55,6 @@ struct ToxCall
 
 struct ToxGroupCall
 {
-    //OLD:ToxAvCSettings codecSettings;
     QTimer *sendAudioTimer;
     int groupId;
     bool active = false;

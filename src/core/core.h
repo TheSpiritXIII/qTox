@@ -131,14 +131,14 @@ public slots:
     void pauseResumeFileSend(uint32_t friendId, uint32_t fileNum);
     void pauseResumeFileRecv(uint32_t friendId, uint32_t fileNum);
 
-    void answerCall(uint32_t callId);
-    void rejectCall(int callId);
-    void hangupCall(int callId);
+    void answerCall(uint32_t friendId);
+    void rejectCall(uint32_t friendId);
+    void hangupCall(uint32_t friendId);
     void startCall(uint32_t friendId, bool video=false);
     void cancelCall(uint32_t friendId);
 
-    void micMuteToggle(int callId);
-    void volMuteToggle(int callId);
+    void micMuteToggle(uint32_t friendId);
+    void volMuteToggle(uint32_t friendId);
 
     void setNospam(uint32_t nospam);
 
@@ -267,10 +267,10 @@ private:
     static void onAvPeerTimeout(void* toxav, int32_t call_index, void* core);
     static void onAvMediaChange(void *toxav, int32_t call_index, void* core);
 
-    //OLD:static void sendGroupCallAudio(int groupId, ToxAv* toxav);
+    static void sendGroupCallAudio(int groupId, ToxAV* toxav);
 
     static void prepareCall(uint32_t friendId, ToxAV *toxav, bool videoEnabled);
-    static void cleanupCall(int callId);
+    static void cleanupCall(uint32_t friendId);
     static void playCallAudio(ToxAV* toxav, uint32_t friendId, const int16_t *data, size_t samples,
                               uint8_t channels, uint32_t sampling_rate, void *user_data);
 
@@ -278,7 +278,7 @@ private:
     static void playAudioBuffer(ALuint alSource, const int16_t *data, int samples,
                                 unsigned channels, int sampleRate);
     //OLD:static void playCallVideo(void *toxav, int32_t callId, const vpx_image_t* img, void *user_data);
-    //OLD:static void sendCallVideo(int callId, ToxAv* toxav, std::shared_ptr<VideoFrame> frame);
+    static void sendCallVideo(int callId, ToxAV* toxav, std::shared_ptr<VideoFrame> frame);
 
     void handleCallError(TOXAV_ERR_CALL_CONTROL control_err);
 

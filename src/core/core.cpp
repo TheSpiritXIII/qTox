@@ -79,15 +79,6 @@ Core::Core(QThread *CoreThread, Profile& profile)
     connect(toxTimer, &QTimer::timeout, this, &Core::process);
     connect(&Settings::getInstance(), &Settings::dhtServerListChanged, this, &Core::process);
 
-    //OLD:
-    /*for (int i=0; i<TOXAV_MAX_CALLS;i++)
-    {
-        calls[i].active = false;
-        calls[i].alSource = 0;
-        calls[i].sendAudioTimer = new QTimer();
-        calls[i].sendAudioTimer->moveToThread(coreThread);
-    }*/
-
     // OpenAL init
     QString outDevDescr = Settings::getInstance().getOutDev();
     Audio::openOutput(outDevDescr);
@@ -128,13 +119,12 @@ Core::~Core()
         coreThread->wait(500);
     }
 
-    //OLD:
-    /*for (ToxCall call : calls)
+    for (QHash<uint32_t, ToxCall>::iterator call = halls.begin(); call != halls.end(); ++call)
     {
-        if (!call.active)
+        if (!call.value().active)
             continue;
-        hangupCall(call.callId);
-    }*/
+        hangupCall(call.key());
+    }
 
     deadifyTox();
 
@@ -1069,9 +1059,8 @@ int Core::joinGroupchat(int32_t friendnumber, uint8_t type, const uint8_t* frien
     else if (type == TOX_GROUPCHAT_TYPE_AV)
     {
         qDebug() << QString("Trying to join AV groupchat invite sent by friend %1").arg(friendnumber);
-        //OLD:
-        /*return toxav_join_av_groupchat(tox, friendnumber, friend_group_public_key, length,
-                                       &Audio::playGroupAudioQueued, const_cast<Core*>(this));*/
+        return toxav_join_av_groupchat(tox, friendnumber, friend_group_public_key, length,
+                                       &Audio::playGroupAudioQueued, const_cast<Core*>(this));
     }
     else
     {
@@ -1098,7 +1087,7 @@ void Core::createGroup(uint8_t type)
     }
     else if (type == TOX_GROUPCHAT_TYPE_AV)
     {
-        //OLD:emit emptyGroupCreated(toxav_add_av_groupchat(tox, &Audio::playGroupAudioQueued, this));
+        emit emptyGroupCreated(toxav_add_av_groupchat(tox, &Audio::playGroupAudioQueued, this));
     }
     else
     {

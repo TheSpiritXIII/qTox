@@ -252,9 +252,8 @@ void ChatForm::onAvInvite(uint32_t FriendId, bool video)
     if (FriendId != f->getFriendID())
         return;
 
-    qDebug() << "onAvInvite";
+    qDebug() << "onAvInvite" << video;
 
-    //OLD:callId = CallId;
     callButton->disconnect();
     videoButton->disconnect();
     if (video)
@@ -310,7 +309,6 @@ void ChatForm::onAvStart(uint32_t FriendId/*, int CallId*/, bool video)
 
     audioInputFlag = true;
     audioOutputFlag = true;
-    //OLD:callId = CallId;
     callButton->disconnect();
     videoButton->disconnect();
 
@@ -392,7 +390,6 @@ void ChatForm::onAvRinging(uint32_t FriendId/*, int CallId*/, bool video)
 
     qDebug() << "onAvRinging";
 
-    //OLD:callId = CallId;
     callButton->disconnect();
     videoButton->disconnect();
     if (video)
@@ -429,8 +426,6 @@ void ChatForm::onAvStarting(uint32_t FriendId/*, int CallId*/, bool video)
         return;
 
     qDebug() << "onAvStarting";
-
-    //OLD:callId = CallId;
 
     callButton->disconnect();
     videoButton->disconnect();
@@ -525,9 +520,9 @@ void ChatForm::onAvRejected(uint32_t FriendId)
     hideNetcam();
 }
 
-void ChatForm::onAvMediaChange(uint32_t FriendId/*, int CallId*/, bool video)
+void ChatForm::onAvMediaChange(uint32_t FriendId, bool video)
 {
-    if (FriendId != f->getFriendID())//OLD: || CallId != callId)
+    if (FriendId != f->getFriendID())
         return;
 
     qDebug() << "onAvMediaChange";
