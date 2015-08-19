@@ -140,7 +140,6 @@ void Widget::init()
 
     filterDisplayName = new QAction(this);
     filterDisplayName->setCheckable(true);
-    filterDisplayName->setChecked(true);
     filterDisplayGroup->addAction(filterDisplayName);
     filterMenu->addAction(filterDisplayName);
     filterDisplayActivity = new QAction(this);
@@ -268,6 +267,9 @@ void Widget::init()
     if (Settings::getInstance().getCheckUpdates())
         AutoUpdater::checkUpdatesAsyncInteractive();
 #endif
+
+    filterDisplayGroup->actions().at(Settings::getInstance().getFilterMode())->setChecked(true);
+    changeDisplayMode();
 
     retranslateUi();
     Translator::registerHandler(std::bind(&Widget::retranslateUi, this), this);
@@ -1418,13 +1420,14 @@ void Widget::reloadTheme()
     ui->statusHead->setStyleSheet(statusPanelStyle);
     ui->friendList->setStyleSheet(Style::getStylesheet(":ui/friendList/friendList.css"));
     ui->statusButton->setStyleSheet(Style::getStylesheet(":ui/statusButton/statusButton.css"));
-    contactListWidget->reDraw();
 
     for (Friend* f : FriendList::getAllFriends())
         f->getFriendWidget()->reloadTheme();
 
     for (Group* g : GroupList::getAllGroups())
         g->getGroupWidget()->reloadTheme();
+
+    contactListWidget->reDraw();
 }
 
 void Widget::nextContact()
@@ -1516,6 +1519,8 @@ void Widget::changeDisplayMode()
         contactListWidget->setMode(FriendListWidget::Activity);
     else if (filterDisplayGroup->checkedAction() == filterDisplayName)
         contactListWidget->setMode(FriendListWidget::Name);
+
+    Settings::getInstance().setFilterMode(filterDisplayGroup->actions().indexOf(filterDisplayGroup->checkedAction()));
 
     searchContacts();
     filterDisplayGroup->setEnabled(true);

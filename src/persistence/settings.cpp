@@ -175,6 +175,7 @@ void Settings::loadGlobal()
                                       QStandardPaths::locate(QStandardPaths::HomeLocation, QString(), QStandardPaths::LocateDirectory)
                                       ).toString();
         groupchatPosition = s.value("groupchatPosition", true).toBool();
+        filterMode = s.value("filterMode", 0).toInt();
     s.endGroup();
 
     s.beginGroup("Advanced");
@@ -379,6 +380,7 @@ void Settings::saveGlobal()
         s.setValue("groupchatPosition", groupchatPosition);
         s.setValue("autoSaveEnabled", autoSaveEnabled);
         s.setValue("globalAutoAcceptDir", globalAutoAcceptDir);
+        s.setValue("filterMode", filterMode);
     s.endGroup();
 
     s.beginGroup("Advanced");
@@ -652,6 +654,18 @@ void Settings::setStyle(const QString& newStyle)
 {
     QMutexLocker locker{&bigLock};
     style = newStyle;
+}
+
+int Settings::getFilterMode() const
+{
+    QMutexLocker locker{&bigLock};
+    return filterMode;
+}
+
+void Settings::setFilterMode(int mode)
+{
+    QMutexLocker locker{&bigLock};
+    filterMode = mode;
 }
 
 bool Settings::getShowSystemTray() const

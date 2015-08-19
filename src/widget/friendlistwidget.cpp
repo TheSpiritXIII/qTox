@@ -192,6 +192,8 @@ void FriendListWidget::setMode(Mode mode)
         {
             int circleId = Settings::getInstance().getFriendCircleID(contact->getToxId());
             addFriendWidget(contact->getFriendWidget(), contact->getStatus(), circleId);
+            contact->getFriendWidget()->reloadTheme();
+            contact->getFriendWidget()->update();
         }
 
         listLayout->addLayout(listLayout->getLayoutOnline());
@@ -281,6 +283,8 @@ void FriendListWidget::setMode(Mode mode)
             Time time = getTime(activityDate);
             CategoryWidget* categoryWidget = dynamic_cast<CategoryWidget*>(activityLayout->itemAt(time)->widget());
             categoryWidget->addFriendWidget(contact->getFriendWidget(), contact->getStatus());
+            contact->getFriendWidget()->reloadTheme();
+            contact->getFriendWidget()->update();
         }
 
         for (int i = 0; i < activityLayout->count(); ++i)

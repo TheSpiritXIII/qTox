@@ -90,6 +90,9 @@ public:
     QString getStyle() const;
     void setStyle(const QString& newValue);
 
+    int getFilterMode() const;
+    void setFilterMode(int mode);
+
     bool getShowSystemTray() const;
     void setShowSystemTray(const bool& newValue);
 
@@ -308,6 +311,7 @@ private:
     bool showInFront;
     bool notifySound;
     bool groupAlwaysNotify;
+    int filterMode;
 
     bool forceTCP;
 
