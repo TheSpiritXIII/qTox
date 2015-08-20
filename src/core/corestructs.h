@@ -6,6 +6,11 @@
 
 #include <QString>
 #include <memory>
+
+#ifdef Q_OS_WIN
+#include <QHash>
+#endif
+
 class QFile;
 class QTimer;
 
@@ -58,5 +63,9 @@ struct ToxFile
     QByteArray avatarData;
     QByteArray resumeFileId;
 };
+
+#ifdef Q_OS_WIN
+uint qHash(const ToxFile& toxFile);
+#endif
 
 #endif // CORESTRUCTS_H

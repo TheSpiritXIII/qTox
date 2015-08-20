@@ -33,3 +33,10 @@ bool ToxFile::open(bool write)
 {
     return write ? file->open(QIODevice::ReadWrite) : file->open(QIODevice::ReadOnly);
 }
+
+#ifdef Q_OS_WIN
+uint qHash(const ToxFile& toxFile)
+{
+    return qHash(toxFile.fileNum);
+}
+#endif

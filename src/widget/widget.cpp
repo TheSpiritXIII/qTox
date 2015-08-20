@@ -69,6 +69,15 @@
 #include <QProcess>
 #include <tox/tox.h>
 
+#ifdef Q_OS_WIN
+#include <QDir>
+#include <QWinJumpList>
+#include <QWinJumpListCategory>
+#include <QWinJumpListItem>
+#include <QWinTaskbarButton>
+#include <QWinTaskbarProgress>
+#endif
+
 #ifdef Q_OS_ANDROID
 #define IS_ON_DESKTOP_GUI 0
 #else
@@ -228,6 +237,10 @@ void Widget::init()
     Core* core = Nexus::getCore();
     connect(core, &Core::fileDownloadFinished, filesForm, &FilesForm::onFileDownloadComplete);
     connect(core, &Core::fileUploadFinished, filesForm, &FilesForm::onFileUploadComplete);
+#ifdef Q_OS_WIN
+    connect(core, &Core::fileTransferInfo, this, &Widget::fileTransferInfo);
+    connect(core, &Core::fileTransferAccepted, this, &Widget::fileTransferAdd);
+#endif
     connect(settingsWidget, &SettingsWidget::setShowSystemTray, this, &Widget::onSetShowSystemTray);
     connect(core, &Core::selfAvatarChanged, profileForm, &ProfileForm::onSelfAvatarLoaded);
     connect(ui->addButton, &QPushButton::clicked, this, &Widget::onAddClicked);
@@ -1581,6 +1594,60 @@ void Widget::friendListContextMenu(const QPoint &pos)
     if (chosenAction == addCircleAction)
         contactListWidget->addCircleWidget();
 }
+
+#ifdef Q_OS_WIN
+void Widget::fileTransferAdd(ToxFile file)
+{
+    filesInProgress.insert(file);
+
+    if (filesInProgress.size() == 1)
+    {
+        winButton = new QWinTaskbarButton(this);
+        winButton->setWindow(windowHandle());
+
+        winButton->progress()->setVisible(true);
+        winButton->progress()->setValue(0);
+    }
+}
+
+void Widget::fileTransferInfo(ToxFile file)
+{
+    if (!filesInProgress.contains(file))
+        return;
+
+    filesInProgress.remove(file);
+
+    if (file.status != ToxFile::PAUSED && file.status != ToxFile::STOPPED)
+        filesInProgress.insert(file);
+
+    float average = 0.0f;
+    bool finished = true, paused  = false;
+
+    for (ToxFile toxFile : filesInProgress)
+    {
+        average += toxFile.bytesSent / static_cast<float>(toxFile.filesize);
+
+        if (toxFile.bytesSent != toxFile.filesize)
+        {
+            finished = false;
+        }
+    }
+
+    winButton->progress()->setPaused(file.status == ToxFile::PAUSED && finished);
+
+    if (!winButton->progress()->isPaused())
+    {
+        filesInProgress.clear();
+        winButton->progress()->hide();
+        winButton->deleteLater();
+    }
+
+    int total, sent;
+    total = sent = 0;
+
+    winButton->progress()->setValue(average / filesInProgress.count() * 100);
+}
+#endif
 
 void Widget::setActiveToolMenuButton(ActiveToolMenuButton newActiveButton)
 {

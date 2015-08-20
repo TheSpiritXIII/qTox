@@ -54,6 +54,8 @@ DEFINES += TIMESTAMP=$$TIMESTAMP
 DEFINES += LOG_TO_FILE
 DEFINES += QT_MESSAGELOGCONTEXT
 
+win32: QT += winextras
+
 android {
     ANDROID_TOOLCHAIN=/opt/android/toolchain-r9d-17/
     INCLUDEPATH += $$ANDROID_TOOLCHAIN/include/

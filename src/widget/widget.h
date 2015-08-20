@@ -52,6 +52,12 @@ class AddFriendForm;
 class CircleWidget;
 class QActionGroup;
 
+#ifdef Q_OS_WIN
+#include <QSet>
+#include "src/core/corestructs.h"
+class QWinTaskbarButton;
+#endif
+
 class Widget final : public QMainWindow
 {
     Q_OBJECT
@@ -159,6 +165,10 @@ private slots:
     void onSplitterMoved(int pos, int index);
     void processOfflineMsgs();
     void friendListContextMenu(const QPoint &pos);
+#ifdef Q_OS_WIN
+    void fileTransferAdd(ToxFile file);
+    void fileTransferInfo(ToxFile file);
+#endif
 
 private:
     enum ActiveToolMenuButton {
@@ -236,6 +246,11 @@ private:
     bool eventFlag;
     bool eventIcon;
     bool wasMaximized = false;
+
+#ifdef Q_OS_WIN32
+    QSet<ToxFile> filesInProgress;
+    QWinTaskbarButton* winButton;
+#endif
 };
 
 bool toxActivateEventHandler(const QByteArray& data);
